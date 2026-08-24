@@ -1,5 +1,99 @@
 <!doctype html>
 <html lang="zh-CN">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>BO Console</title></head>
-<body><main><h1>BO Console</h1></main></body>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BO Console</title>
+  <link rel="stylesheet" href="newtab.css">
+</head>
+<body>
+  <header>
+    <div class="header-left">
+      <h1 id="page-title">BO Console</h1>
+      <span id="helper-status" class="helper-badge"></span>
+    </div>
+    <div class="header-right">
+      <span id="clock"></span>
+      <button id="refresh-button" type="button" aria-label="刷新状态">⟳</button>
+      <a id="settings-link" href="settings.html" aria-label="设置">⚙</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="greeting-search">
+      <p id="greeting" class="greeting"></p>
+      <form id="search-form" role="search" aria-label="网页搜索">
+        <input id="search-input" type="text" placeholder="搜索 Google，或输入网址..." aria-label="搜索">
+        <kbd>⌘K</kbd>
+      </form>
+    </div>
+
+    <section id="shortcut-nav" aria-label="快捷入口"></section>
+
+    <section id="summary-section" aria-label="状态摘要">
+      <div class="summary-card" id="card-docker">
+        <h3>DOCKER</h3>
+        <div class="summary-main"><span id="docker-running">-</span> 运行中</div>
+        <div class="summary-sub"><span id="docker-stopped">-</span> 已停止</div>
+      </div>
+      <div class="summary-card" id="card-ports">
+        <h3>端口</h3>
+        <div class="summary-main"><span id="port-total">-</span> 个关注端口</div>
+        <div class="summary-sub"><span id="port-listening">-</span> 监听 / <span id="port-missing">-</span> 未监听</div>
+      </div>
+      <div class="summary-card" id="card-servers">
+        <h3>服务器</h3>
+        <div class="summary-main"><span id="server-online">-</span> 在线 / <span id="server-offline">-</span> 离线</div>
+        <div class="summary-sub">平均 CPU <span id="server-avg-cpu">-</span></div>
+      </div>
+      <div class="summary-card" id="card-attention">
+        <h3>异常</h3>
+        <div class="summary-main"><span id="attention-count">-</span> 项需要关注</div>
+        <div class="summary-sub" id="attention-breakdown"></div>
+      </div>
+    </section>
+
+    <div class="dashboard-grid">
+      <div class="dashboard-col-left">
+        <section id="docker-section" aria-labelledby="docker-heading">
+          <h2 id="docker-heading">本机 · Docker 容器 <button id="docker-view-all" type="button">查看全部</button></h2>
+          <div id="container-list" class="item-list"></div>
+        </section>
+
+        <section id="port-section" aria-labelledby="port-heading">
+          <h2 id="port-heading">监听端口 <span id="port-mode-badge"></span></h2>
+          <div id="port-filters" class="filters">
+            <button class="filter-btn active" data-filter="all" type="button">全部</button>
+            <button class="filter-btn" data-filter="docker" type="button">Docker</button>
+          </div>
+          <div id="port-list" class="item-list"></div>
+        </section>
+      </div>
+
+      <div class="dashboard-col-right">
+        <section id="server-section" aria-labelledby="server-heading">
+          <h2 id="server-heading">服务器 · 哪吒监控</h2>
+          <div id="server-list" class="item-list"></div>
+        </section>
+
+        <section id="attention-section" aria-labelledby="attention-heading">
+          <h2 id="attention-heading">当前异常</h2>
+          <div id="attention-list" class="item-list"></div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <dialog id="container-dialog" aria-labelledby="container-dialog-heading">
+    <h2 id="container-dialog-heading">Docker 容器</h2>
+    <div id="container-dialog-list"></div>
+    <form method="dialog"><button type="button" id="close-dialog">关闭</button></form>
+  </dialog>
+
+  <footer>
+    <span id="status-live" aria-live="polite"></span>
+  </footer>
+
+  <script type="module" src="newtab.js"></script>
+</body>
 </html>

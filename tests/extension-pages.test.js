@@ -9,3 +9,14 @@ test('settings page exposes only non-secret dashboard preferences', async () => 
   }
   assert.doesNotMatch(html, /name=["'](?:pat|password)["']/i);
 });
+
+test('new tab has the required accessible dashboard regions', async () => {
+  const html = await readFile('extension/newtab.html', 'utf8');
+  assert.equal((html.match(/<main\b/g) ?? []).length, 1);
+  for (const id of ['search-form', 'shortcut-nav', 'docker-section', 'container-dialog', 'port-section', 'server-section', 'attention-section', 'refresh-button', 'settings-link', 'status-live']) {
+    assert.match(html, new RegExp(`id=["']${id}["']`), `missing #${id}`);
+  }
+  assert.match(html, /<script[^>]+type=["']module["'][^>]+src=["']newtab\.js["']/);
+  assert.doesNotMatch(html, /\son[a-z]+=/i);
+  assert.match(html, /aria-live=["']polite["']/);
+});

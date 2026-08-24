@@ -125,6 +125,7 @@ export function buildDashboardModel(snapshot, settings) {
 
   return {
     dockerSummary,
+    containers: local.containers ?? [],
     portRows,
     portSummary,
     serverSummary,
