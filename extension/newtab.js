@@ -484,8 +484,23 @@ function setupKeyboard() {
   });
 }
 
+const SEARCH_ENGINES = {
+  google: 'https://www.google.com/search?q=%s',
+  baidu: 'https://www.baidu.com/s?wd=%s',
+};
+
 function setupSearch() {
   const form = document.getElementById('search-form');
+  const select = document.getElementById('search-engine-select');
+
+  // Initialize selector from settings
+  const currentEngine = Object.entries(SEARCH_ENGINES).find(([, url]) => url === settings.searchEngine);
+  select.value = currentEngine ? currentEngine[0] : 'google';
+
+  select.addEventListener('change', () => {
+    settings.searchEngine = SEARCH_ENGINES[select.value];
+  });
+
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const query = document.getElementById('search-input').value.trim();
@@ -494,13 +509,13 @@ function setupSearch() {
     try {
       const url = new URL(query);
       if (url.protocol === 'http:' || url.protocol === 'https:') {
-        window.location.href = query;
+        window.open(query, '_blank');
         return;
       }
     } catch {}
 
     const searchUrl = settings.searchEngine.replace('%s', encodeURIComponent(query));
-    window.location.href = searchUrl;
+    window.open(searchUrl, '_blank');
   });
 }
 

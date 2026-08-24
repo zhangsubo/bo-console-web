@@ -114,6 +114,22 @@ main {
   box-shadow: var(--shadow);
 }
 
+#search-engine-select {
+  border: none;
+  background: transparent;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-right: 1px solid var(--color-border);
+  padding-right: 0.5rem;
+  outline: none;
+}
+
+#search-engine-select:focus {
+  color: var(--color-text);
+}
+
 #search-input {
   flex: 1;
   border: none;

@@ -23,7 +23,11 @@
     <div class="greeting-search">
       <p id="greeting" class="greeting"></p>
       <form id="search-form" role="search" aria-label="网页搜索">
-        <input id="search-input" type="text" placeholder="搜索 Google，或输入网址..." aria-label="搜索">
+        <select id="search-engine-select" aria-label="搜索引擎">
+          <option value="google">Google</option>
+          <option value="baidu">百度</option>
+        </select>
+        <input id="search-input" type="text" placeholder="搜索，或输入网址..." aria-label="搜索">
         <kbd>⌘K</kbd>
       </form>
     </div>
