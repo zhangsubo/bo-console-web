@@ -165,6 +165,27 @@ function renderSummaryCards() {
   document.getElementById('server-avg-cpu').textContent = m.serverSummary.avgCpu != null ? `${m.serverSummary.avgCpu}%` : '-';
   document.getElementById('attention-count').textContent = m.attention.length;
 
+  // Set severity on cards for color coding
+  const portCard = document.getElementById('card-ports');
+  const serverCard = document.getElementById('card-servers');
+  const attentionCard = document.getElementById('card-attention');
+
+  portCard.removeAttribute('data-severity');
+  serverCard.removeAttribute('data-severity');
+  attentionCard.removeAttribute('data-severity');
+
+  if (m.portSummary.missing > 0) {
+    portCard.dataset.severity = 'critical';
+  }
+  if (m.serverSummary.offline > 0) {
+    serverCard.dataset.severity = 'critical';
+  }
+  if (m.attention.some(a => a.severity === 'critical')) {
+    attentionCard.dataset.severity = 'critical';
+  } else if (m.attention.some(a => a.severity === 'warning')) {
+    attentionCard.dataset.severity = 'warning';
+  }
+
   const serverAttention = m.attention.filter(a => a.code !== 'watched_port_missing').length;
   const portAttention = m.attention.filter(a => a.code === 'watched_port_missing').length;
   const parts = [];
