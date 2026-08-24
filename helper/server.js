@@ -159,3 +159,32 @@ export function createHelperServer({ config, collectDockerImpl, collectPortsImpl
 
   return server;
 }
+
+// Direct startup when run as main module
+if (process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/.*\//, ''))) {
+  const host = process.env.HELPER_HOST || '127.0.0.1';
+  const port = Number(process.env.HELPER_PORT) || 17321;
+  const helperToken = process.env.HELPER_TOKEN;
+  const allowedExtensionId = process.env.ALLOWED_EXTENSION_ID;
+  const nezhaPat = process.env.NEZHA_PAT || '';
+
+  if (!helperToken || !allowedExtensionId) {
+    console.error('HELPER_TOKEN and ALLOWED_EXTENSION_ID are required in .env');
+    process.exit(1);
+  }
+
+  const { collectDocker } = await import('./docker.js');
+  const { collectPorts } = await import('./ports.js');
+  const { fetchNezhaServers } = await import('./nezha.js');
+
+  const server = createHelperServer({
+    config: { host, port, helperToken, allowedExtensionId, nezhaPat },
+    collectDockerImpl: collectDocker,
+    collectPortsImpl: (pubPorts) => collectPorts(pubPorts),
+    fetchNezhaImpl: fetchNezhaServers,
+  });
+
+  server.listen(port, host, () => {
+    console.log(`Helper listening on ${host}:${port}`);
+  });
+}
