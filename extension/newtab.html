@@ -58,35 +58,31 @@
     </section>
 
     <div class="dashboard-grid">
-      <div class="dashboard-col-left">
-        <section id="docker-section" aria-labelledby="docker-heading">
-          <h2 id="docker-heading">本机 · Docker 容器 <button id="docker-view-all" type="button">查看全部</button></h2>
-          <div id="container-list" class="item-list"></div>
-        </section>
+      <section id="docker-section" aria-labelledby="docker-heading">
+        <h2 id="docker-heading">本机 · Docker 容器 <button id="docker-view-all" type="button">查看全部</button></h2>
+        <div id="container-list" class="item-list"></div>
+      </section>
 
-        <section id="port-section" aria-labelledby="port-heading">
-          <h2 id="port-heading">监听端口 <span id="port-mode-badge"></span></h2>
-          <div id="port-filters" class="filters">
-            <button class="filter-btn active" data-filter="all" type="button">全部</button>
-            <button class="filter-btn" data-filter="docker" type="button">Docker</button>
-            <button class="filter-btn" data-filter="system" type="button">系统</button>
-          </div>
-          <div id="port-list" class="item-list"></div>
-          <div id="port-pagination" class="pagination"></div>
-        </section>
-      </div>
+      <section id="port-section" aria-labelledby="port-heading">
+        <h2 id="port-heading">监听端口 <span id="port-mode-badge"></span></h2>
+        <div id="port-filters" class="filters">
+          <button class="filter-btn active" data-filter="all" type="button">全部</button>
+          <button class="filter-btn" data-filter="docker" type="button">Docker</button>
+          <button class="filter-btn" data-filter="system" type="button">系统</button>
+        </div>
+        <div id="port-list" class="item-list"></div>
+        <div id="port-pagination" class="pagination"></div>
+      </section>
 
-      <div class="dashboard-col-right">
-        <section id="server-section" aria-labelledby="server-heading">
-          <h2 id="server-heading">服务器 · 哪吒监控</h2>
-          <div id="server-list" class="item-list"></div>
-        </section>
+      <section id="server-section" aria-labelledby="server-heading">
+        <h2 id="server-heading">服务器 · 哪吒监控</h2>
+        <div id="server-list" class="item-list"></div>
+      </section>
 
-        <section id="attention-section" aria-labelledby="attention-heading">
-          <h2 id="attention-heading">当前异常</h2>
-          <div id="attention-list" class="item-list"></div>
-        </section>
-      </div>
+      <section id="attention-section" aria-labelledby="attention-heading">
+        <h2 id="attention-heading">当前异常</h2>
+        <div id="attention-list" class="item-list"></div>
+      </section>
     </div>
   </main>
 
