@@ -6,6 +6,7 @@ let settings;
 let helperToken;
 let currentModel = null;
 let portFilter = 'all';
+let portPage = 1;
 let localTimer = null;
 let remoteTimer = null;
 
@@ -230,6 +231,7 @@ function renderPorts() {
 
   const modeBadge = document.getElementById('port-mode-badge');
   const filters = document.getElementById('port-filters');
+  const pagination = document.getElementById('port-pagination');
 
   if (settings.watchedPorts.length > 0) {
     modeBadge.textContent = '关注端口模式';
@@ -247,10 +249,18 @@ function renderPorts() {
 
   if (rows.length === 0) {
     list.innerHTML = '<div class="empty-state">无端口数据</div>';
+    pagination.innerHTML = '';
     return;
   }
 
-  for (const row of rows) {
+  // Pagination
+  const perPage = settings.portsPerPage;
+  const totalPages = Math.max(1, Math.ceil(rows.length / perPage));
+  if (portPage > totalPages) portPage = totalPages;
+  const start = (portPage - 1) * perPage;
+  const pageRows = rows.slice(start, start + perPage);
+
+  for (const row of pageRows) {
     const item = document.createElement('div');
     item.className = 'item-row';
 
@@ -280,6 +290,32 @@ function renderPorts() {
     item.append(dot, port, detail, action);
     list.appendChild(item);
   }
+
+  renderPagination(pagination, totalPages, rows.length);
+}
+
+function renderPagination(container, totalPages, totalItems) {
+  container.innerHTML = '';
+  if (totalPages <= 1) return;
+
+  const prev = document.createElement('button');
+  prev.textContent = '‹';
+  prev.disabled = portPage <= 1;
+  prev.addEventListener('click', () => { portPage--; renderPorts(); });
+
+  const info = document.createElement('span');
+  info.className = 'page-info';
+  info.textContent = `${portPage} / ${totalPages}`;
+
+  const next = document.createElement('button');
+  next.textContent = '›';
+  next.disabled = portPage >= totalPages;
+  next.addEventListener('click', () => { portPage++; renderPorts(); });
+
+  const count = document.createElement('span');
+  count.textContent = `共 ${totalItems} 个`;
+
+  container.append(prev, info, next, count);
 }
 
 function renderServers() {
@@ -546,6 +582,7 @@ function setupPortFilters() {
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       portFilter = btn.dataset.filter;
+      portPage = 1;
       renderPorts();
     });
   });

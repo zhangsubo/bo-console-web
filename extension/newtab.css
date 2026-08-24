@@ -407,6 +407,46 @@ section h2 button:hover {
   border-color: var(--color-accent);
 }
 
+/* Pagination */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.pagination:empty {
+  display: none;
+}
+
+.pagination button {
+  padding: 0.25rem 0.625rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+.pagination button:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.pagination button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pagination .page-info {
+  min-width: 4rem;
+  text-align: center;
+}
+
 /* Server card */
 .server-card {
   display: flex;

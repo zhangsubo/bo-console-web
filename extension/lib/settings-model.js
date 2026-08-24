@@ -3,6 +3,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   greetingName: '',
   searchEngine: 'https://www.google.com/search?q=%s',
   watchedPorts: [],
+  portsPerPage: 15,
   nezhaBaseUrl: '',
   thresholds: { warning: 80, critical: 90 },
   refresh: { localSeconds: 10, remoteSeconds: 30 },
@@ -27,6 +28,7 @@ export function normalizeSettings(value) {
     greetingName: typeof raw.greetingName === 'string' ? raw.greetingName : DEFAULT_SETTINGS.greetingName,
     searchEngine: typeof raw.searchEngine === 'string' && raw.searchEngine ? raw.searchEngine : DEFAULT_SETTINGS.searchEngine,
     watchedPorts,
+    portsPerPage: Number.isFinite(raw.portsPerPage) && raw.portsPerPage >= 5 ? raw.portsPerPage : DEFAULT_SETTINGS.portsPerPage,
     nezhaBaseUrl: typeof raw.nezhaBaseUrl === 'string' ? raw.nezhaBaseUrl : DEFAULT_SETTINGS.nezhaBaseUrl,
     thresholds: {
       warning: Number.isFinite(thresholds.warning) ? thresholds.warning : DEFAULT_SETTINGS.thresholds.warning,

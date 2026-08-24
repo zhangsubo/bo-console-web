@@ -34,6 +34,9 @@ export function filterPortRows(rows, sourceFilter) {
   if (sourceFilter === 'docker') {
     return rows.filter(r => r.source === 'Docker');
   }
+  if (sourceFilter === 'system') {
+    return rows.filter(r => r.source !== 'Docker');
+  }
   return rows;
 }
 

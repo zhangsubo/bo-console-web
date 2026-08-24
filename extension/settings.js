@@ -18,6 +18,7 @@ function renderSettings(s) {
   document.getElementById('critical-threshold').value = s.thresholds.critical;
   document.getElementById('local-refresh').value = s.refresh.localSeconds;
   document.getElementById('remote-refresh').value = s.refresh.remoteSeconds;
+  document.getElementById('ports-per-page').value = s.portsPerPage;
   renderWatchedPorts(s.watchedPorts);
   renderShortcuts(s.shortcuts);
 }
@@ -128,6 +129,7 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
       localSeconds: Number(document.getElementById('local-refresh').value),
       remoteSeconds: Number(document.getElementById('remote-refresh').value),
     },
+    portsPerPage: Number(document.getElementById('ports-per-page').value),
     shortcuts: currentSettings.shortcuts,
   };
   const normalized = normalizeSettings(s);
