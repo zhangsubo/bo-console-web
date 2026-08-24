@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "BO Console",
+  "version": "0.1.0",
+  "description": "Read-only macOS, Docker, port and server status new tab.",
+  "chrome_url_overrides": { "newtab": "newtab.html" },
+  "options_page": "settings.html",
+  "permissions": ["storage"],
+  "host_permissions": ["http://127.0.0.1:17321/*"]
+}
