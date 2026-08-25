@@ -56,7 +56,7 @@ export EXTENSION_ID="YOUR_EXTENSION_ID"
 # 5. 重启 Helper
 launchctl kickstart -k gui/$UID/com.bo.console.helper
 
-# 6. 打开新标签页，进入设置页配置关注端口、哪吒地址和快捷入口
+# 6. 打开新标签页，点右上角 ⚙ 打开设置面板，配置关注端口、哪吒地址和快捷入口
 ```
 
 ### 卸载

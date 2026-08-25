@@ -1,10 +1,12 @@
 import { buildDashboardModel, filterPortRows, isLikelyHttpPort } from './lib/dashboard-model.js';
 import { loadSettings } from './lib/storage.js';
 import { pairHelper, fetchSnapshot } from './lib/api.js';
+import { initSettingsPanel } from './lib/settings-panel.js';
 
 let settings;
 let helperToken;
 let currentModel = null;
+let lastSnapshot = null;
 let portFilter = 'all';
 let portPage = 1;
 let localTimer = null;
@@ -18,6 +20,7 @@ async function init() {
   // Try cached snapshot first
   const cached = await loadCached();
   if (cached) {
+    lastSnapshot = cached;
     currentModel = buildDashboardModel(cached, settings);
     renderDashboard();
   }
@@ -38,6 +41,25 @@ async function init() {
   setupDialog();
   setupRefresh();
   setupSearch();
+  initSettingsPanel({ getSettings: () => settings, onSave: applySettings });
+}
+
+// Apply saved settings without a reload
+function applySettings(next) {
+  settings = next;
+  document.title = settings.title;
+  document.getElementById('page-title').textContent = settings.title;
+  updateClock();
+  renderShortcuts();
+  const select = document.getElementById('search-engine-select');
+  const match = Object.entries(SEARCH_ENGINES).find(([, url]) => url === settings.searchEngine);
+  if (match) select.value = match[0];
+  portPage = 1;
+  if (lastSnapshot) {
+    currentModel = buildDashboardModel(lastSnapshot, settings);
+    renderDashboard();
+  }
+  if (helperToken) startTimers();
 }
 
 async function loadCached() {
@@ -57,11 +79,12 @@ async function saveCache(snapshot) {
 
 function setHelperStatus(connected) {
   const badge = document.getElementById('helper-status');
+  const age = currentModel?.localUpdatedAt ? ` · 数据更新于 ${formatAge(currentModel.localUpdatedAt)}` : '';
   if (connected) {
-    badge.textContent = '已连接';
+    badge.textContent = `● 本地 Helper 已连接${age}`;
     badge.className = 'helper-badge';
   } else {
-    badge.textContent = '未连接';
+    badge.textContent = '● 本地 Helper 未连接';
     badge.className = 'helper-badge disconnected';
   }
 }
@@ -80,19 +103,14 @@ function updateClock() {
   const weekday = weekdays[now.getDay()];
   const hours = String(now.getHours()).padStart(2, '0');
   const minutes = String(now.getMinutes()).padStart(2, '0');
-  document.getElementById('clock').textContent = `${month} 月 ${day} 日 ${weekday}  ${hours}:${minutes}`;
+  const clock = document.getElementById('clock');
+  clock.textContent = '';
+  clock.append(`${month} 月 ${day} 日 ${weekday}`, document.createElement('br'), `${hours}:${minutes}`);
 
-  // Greeting
-  const hour = now.getHours();
-  let greeting = '你好';
-  if (hour < 6) greeting = '夜深了';
-  else if (hour < 12) greeting = '上午好';
-  else if (hour < 14) greeting = '中午好';
-  else if (hour < 18) greeting = '下午好';
-  else greeting = '晚上好';
-
-  const name = settings.greetingName ? `，${settings.greetingName}` : '';
-  document.getElementById('greeting').textContent = `${greeting}${name}`;
+  const greeting = document.getElementById('greeting');
+  const h = now.getHours();
+  const part = h < 5 ? '夜深了' : h < 12 ? '上午好' : h < 18 ? '下午好' : '晚上好';
+  greeting.textContent = settings.greetingName ? `${part}，${settings.greetingName}` : part;
 }
 
 function renderShortcuts() {
@@ -100,35 +118,28 @@ function renderShortcuts() {
   nav.innerHTML = '';
   for (const s of settings.shortcuts) {
     const a = document.createElement('a');
-    a.className = 'shortcut-item';
+    a.className = 'shortcut';
     a.href = s.url;
     a.title = s.name;
 
-    const icon = document.createElement('div');
+    const icon = document.createElement('span');
     icon.className = 'shortcut-icon';
+    const img = document.createElement('img');
     if (s.iconUrl) {
-      const img = document.createElement('img');
       img.src = s.iconUrl;
-      img.alt = s.name;
-      img.onerror = () => {
-        img.remove();
-        icon.textContent = getInitials(s.name);
-      };
-      icon.appendChild(img);
     } else {
-      const img = document.createElement('img');
       try {
         img.src = new URL('/favicon.ico', s.url).href;
       } catch {
         img.src = '';
       }
-      img.alt = s.name;
-      img.onerror = () => {
-        img.remove();
-        icon.textContent = getInitials(s.name);
-      };
-      icon.appendChild(img);
     }
+    img.alt = s.name;
+    img.onerror = () => {
+      img.remove();
+      icon.textContent = getInitials(s.name);
+    };
+    icon.appendChild(img);
 
     const name = document.createElement('span');
     name.className = 'shortcut-name';
@@ -152,6 +163,7 @@ function renderDashboard() {
   renderServers();
   renderAttention();
   renderStatusFooter();
+  if (helperToken) setHelperStatus(true);
 }
 
 function renderSummaryCards() {
@@ -195,11 +207,18 @@ function renderSummaryCards() {
   document.getElementById('attention-breakdown').textContent = parts.join(' · ') || '无';
 }
 
+function metricClass(value, thresholds) {
+  if (value >= thresholds.critical) return 'danger';
+  if (value >= thresholds.warning) return 'warn';
+  return '';
+}
+
 function renderContainers() {
   const list = document.getElementById('container-list');
   list.innerHTML = '';
 
   const allContainers = currentModel.localStatus === 'error' ? [] : currentModel.containers;
+  document.getElementById('docker-view-all').textContent = `查看全部 ${allContainers.length}`;
   const visible = allContainers.slice(0, 5);
 
   if (allContainers.length === 0) {
@@ -209,18 +228,31 @@ function renderContainers() {
 
   for (const c of visible) {
     const row = document.createElement('div');
-    row.className = 'item-row';
+    row.className = 'data-row';
+
+    const main = document.createElement('div');
+    main.className = 'row-main';
     const dot = document.createElement('span');
-    dot.className = `dot ${c.state === 'running' ? 'running' : 'stopped'}`;
+    dot.className = `status-dot ${c.state === 'running' ? 'good' : 'danger'}`;
+    dot.setAttribute('aria-label', c.state === 'running' ? '运行中' : '已停止');
     const name = document.createElement('span');
-    name.className = 'item-name';
+    name.className = 'row-name';
     name.textContent = c.name;
-    const meta = document.createElement('span');
-    meta.className = 'item-meta';
-    meta.textContent = c.state === 'running'
-      ? `Up ${c.runningFor}  ${c.publishedPorts.length ? ':' + c.publishedPorts.join(',') : ''}  CPU ${c.cpuPercent}% MEM ${c.memoryPercent}%`
-      : c.status;
-    row.append(dot, name, meta);
+    main.append(dot, name);
+
+    const uptime = document.createElement('span');
+    uptime.className = `row-muted${c.state === 'running' ? '' : ' danger'}`;
+    uptime.textContent = c.state === 'running' ? `Up ${c.runningFor}` : c.status;
+
+    const port = document.createElement('span');
+    port.className = 'row-mono';
+    port.textContent = c.state === 'running' && c.publishedPorts.length ? `:${c.publishedPorts.join(',')}` : '—';
+
+    const usage = document.createElement('span');
+    usage.className = 'row-mono';
+    usage.textContent = c.state === 'running' ? `${c.cpuPercent}% / ${c.memoryPercent}%` : '—';
+
+    row.append(main, uptime, port, usage);
     list.appendChild(row);
   }
 }
@@ -239,6 +271,7 @@ function renderPorts() {
     filters.style.display = 'none';
   } else {
     modeBadge.textContent = '';
+    modeBadge.className = '';
     filters.style.display = '';
   }
 
@@ -262,32 +295,43 @@ function renderPorts() {
 
   for (const row of pageRows) {
     const item = document.createElement('div');
-    item.className = 'item-row';
+    item.className = 'data-row';
 
+    const main = document.createElement('div');
+    main.className = 'row-main';
     const dot = document.createElement('span');
-    dot.className = `dot ${row.listening ? 'listening' : 'missing'}`;
-
+    dot.className = `status-dot ${row.listening ? 'good' : 'danger'}`;
+    dot.setAttribute('aria-label', row.listening ? '监听中' : '未监听');
     const port = document.createElement('span');
-    port.className = 'item-name';
+    port.className = 'row-name';
     port.textContent = row.port;
+    main.append(dot, port);
 
-    const detail = document.createElement('span');
-    detail.className = 'item-detail';
-    detail.textContent = row.listening
-      ? `${row.process}  ${row.pid || ''}  ${row.source}`
-      : '未监听';
+    const status = document.createElement('span');
+    status.className = `row-muted ${row.listening ? 'good' : 'danger'}`;
+    status.textContent = row.listening ? '监听' : '未监听';
 
-    const action = document.createElement('span');
-    if (row.listening && isLikelyHttpPort(row.port)) {
-      const link = document.createElement('a');
-      link.href = `http://localhost:${row.port}`;
-      link.target = '_blank';
-      link.textContent = '打开';
-      link.style.cssText = 'font-size:0.75rem;color:var(--color-accent);text-decoration:none;';
-      action.appendChild(link);
+    const source = document.createElement('span');
+    source.className = 'row-mono';
+    source.textContent = row.listening ? row.source || '系统进程' : '—';
+
+    const process = document.createElement('span');
+    process.className = 'row-mono';
+    if (row.listening) {
+      process.textContent = row.process || '—';
+      if (isLikelyHttpPort(row.port)) {
+        const link = document.createElement('a');
+        link.className = 'row-link';
+        link.href = `http://localhost:${row.port}`;
+        link.target = '_blank';
+        link.textContent = ' 打开 ↗';
+        process.appendChild(link);
+      }
+    } else {
+      process.textContent = '—';
     }
 
-    item.append(dot, port, detail, action);
+    item.append(main, status, source, process);
     list.appendChild(item);
   }
 
@@ -344,54 +388,75 @@ function renderServers() {
     card.href = buildServerUrl(server.id);
     card.target = '_blank';
 
-    const header = document.createElement('div');
-    header.className = 'server-header';
+    const top = document.createElement('div');
+    top.className = 'server-top';
+    const nameWrap = document.createElement('div');
+    nameWrap.className = 'server-name';
     const dot = document.createElement('span');
-    dot.className = `dot ${server.online ? 'online' : 'offline'}`;
+    dot.className = `status-dot ${server.online ? 'good' : 'danger'}`;
+    dot.setAttribute('aria-label', server.online ? '在线' : '离线');
     const name = document.createElement('span');
+    name.className = 'server-name-text';
     name.textContent = server.name;
-    header.append(dot, name);
-
-    if (!server.online) {
-      const badge = document.createElement('span');
-      badge.className = 'badge critical';
-      badge.textContent = '离线';
-      header.appendChild(badge);
-    }
+    nameWrap.append(dot, name);
+    const state = document.createElement('span');
+    state.className = `row-mono${server.online ? '' : ' danger'}`;
+    state.textContent = server.online ? '在线' : '离线';
+    top.append(nameWrap, state);
 
     const metrics = document.createElement('div');
     metrics.className = 'server-metrics';
 
     if (server.online) {
-      const cpuVal = server.cpuPercent ?? 0;
-      const memVal = server.memoryPercent ?? 0;
-      const diskVal = server.diskPercent ?? 0;
-
-      for (const [label, val, threshold] of [
-        ['CPU', cpuVal, settings.thresholds],
-        ['MEM', memVal, settings.thresholds],
-        ['DISK', diskVal, settings.thresholds],
+      for (const [label, val] of [
+        ['CPU', server.cpuPercent ?? 0],
+        ['MEM', server.memoryPercent ?? 0],
+        ['DISK', server.diskPercent ?? 0],
       ]) {
-        const span = document.createElement('span');
-        span.textContent = `${label} ${val}%`;
-        if (val >= threshold.critical) span.style.color = 'var(--color-critical)';
-        else if (val >= threshold.warning) span.style.color = 'var(--color-warning)';
-        metrics.appendChild(span);
+        const cls = metricClass(val, settings.thresholds);
+        const item = document.createElement('div');
+        item.className = 'metric-inline';
+
+        const lbl = document.createElement('span');
+        lbl.className = 'metric-label';
+        lbl.textContent = label;
+
+        const value = document.createElement('span');
+        value.className = `metric-value${cls ? ` ${cls}` : ''}`;
+        value.textContent = `${val}%`;
+
+        const bar = document.createElement('span');
+        bar.className = 'metric-bar';
+        const fill = document.createElement('span');
+        if (cls) fill.className = cls;
+        fill.style.width = `${Math.min(100, val)}%`;
+        bar.appendChild(fill);
+
+        item.append(lbl, value, bar);
+        metrics.appendChild(item);
       }
 
-      const netIn = document.createElement('span');
-      netIn.textContent = `↑ ${formatBytes(server.netInSpeed)}/s`;
-      metrics.appendChild(netIn);
-
-      const netOut = document.createElement('span');
-      netOut.textContent = `↓ ${formatBytes(server.netOutSpeed)}/s`;
-      metrics.appendChild(netOut);
+      const net = document.createElement('div');
+      net.className = 'server-net';
+      const up = document.createElement('span');
+      up.textContent = `↑ ${formatBytes(server.netInSpeed)}/s`;
+      const down = document.createElement('span');
+      down.textContent = `↓ ${formatBytes(server.netOutSpeed)}/s`;
+      net.append(up, down);
+      metrics.appendChild(net);
     }
 
-    card.append(header, metrics);
+    card.append(top, metrics);
     list.appendChild(card);
   }
 }
+
+const ATTENTION_SOURCES = {
+  watched_port_missing: '关注端口',
+  server_offline: '哪吒监控',
+  resource_critical: '资源阈值',
+  resource_warning: '资源阈值',
+};
 
 function renderAttention() {
   const list = document.getElementById('attention-list');
@@ -404,13 +469,23 @@ function renderAttention() {
 
   for (const item of currentModel.attention) {
     const row = document.createElement('div');
-    row.className = 'attention-item';
+    row.className = `attention-item ${item.severity}`;
+
     const icon = document.createElement('span');
     icon.className = `attention-icon ${item.severity}`;
+    icon.setAttribute('aria-hidden', 'true');
     icon.textContent = '!';
-    const text = document.createElement('span');
-    text.textContent = item.message;
-    row.append(icon, text);
+
+    const copy = document.createElement('div');
+    copy.className = 'attention-copy';
+    const message = document.createElement('div');
+    message.textContent = item.message;
+    const time = document.createElement('div');
+    time.className = 'attention-time';
+    time.textContent = `当前 · ${ATTENTION_SOURCES[item.code] ?? '监控'}`;
+    copy.append(message, time);
+
+    row.append(icon, copy);
     list.appendChild(row);
   }
 }
@@ -423,15 +498,15 @@ function renderStatusFooter() {
   if (currentModel.remoteUpdatedAt) {
     parts.push(`服务器 ${formatAge(currentModel.remoteUpdatedAt)}`);
   }
-  parts.push(`本机 ${settings.refresh.localSeconds}s · 服务器 ${settings.refresh.remoteSeconds}s`);
+  parts.push(`本机 ${settings.refresh.localSeconds}s · 服务器 ${settings.refresh.remoteSeconds}s 刷新`);
   document.getElementById('status-live').textContent = parts.join(' · ');
 }
 
 function formatAge(isoString) {
   const age = Math.round((Date.now() - new Date(isoString).getTime()) / 1000);
-  if (age < 60) return `${age} 秒前更新`;
-  if (age < 3600) return `${Math.floor(age / 60)} 分钟前更新`;
-  return `${Math.floor(age / 3600)} 小时前更新`;
+  if (age < 60) return `${age} 秒前`;
+  if (age < 3600) return `${Math.floor(age / 60)} 分钟前`;
+  return `${Math.floor(age / 3600)} 小时前`;
 }
 
 function formatBytes(bytes) {
@@ -460,6 +535,7 @@ async function refreshAll() {
       include: 'all',
     });
     await saveCache(snapshot);
+    lastSnapshot = snapshot;
     currentModel = buildDashboardModel(snapshot, settings);
     renderDashboard();
   } catch (err) {
@@ -484,6 +560,7 @@ async function refreshLocal() {
         remote: { status: currentModel.remoteStatus, servers: currentModel.servers, updatedAt: currentModel.remoteUpdatedAt },
       };
       currentModel = buildDashboardModel(merged, settings);
+      lastSnapshot = merged;
       await saveCache(merged);
       renderDashboard();
     }
@@ -504,6 +581,7 @@ async function refreshRemote() {
         remote: snapshot.remote,
       };
       currentModel = buildDashboardModel(merged, settings);
+      lastSnapshot = merged;
       await saveCache(merged);
       renderDashboard();
     }
@@ -606,20 +684,24 @@ function renderDialogContainers() {
   for (const c of containers) {
     const details = document.createElement('details');
     const summary = document.createElement('summary');
-    summary.className = 'item-row';
+    summary.className = 'data-row';
+
+    const main = document.createElement('div');
+    main.className = 'row-main';
     const dot = document.createElement('span');
-    dot.className = `dot ${c.state === 'running' ? 'running' : 'stopped'}`;
+    dot.className = `status-dot ${c.state === 'running' ? 'good' : 'danger'}`;
     const name = document.createElement('span');
-    name.className = 'item-name';
+    name.className = 'row-name';
     name.textContent = c.name;
+    main.append(dot, name);
+
     const meta = document.createElement('span');
-    meta.className = 'item-meta';
+    meta.className = 'row-muted';
     meta.textContent = c.state === 'running' ? `Up ${c.runningFor}` : c.status;
-    summary.append(dot, name, meta);
+    summary.append(main, meta);
 
     const body = document.createElement('div');
-    body.style.cssText = 'padding:0.5rem 0 0.5rem 1rem;font-size:0.75rem;color:var(--color-text-secondary);';
-    body.innerHTML = '';
+    body.className = 'detail-body';
 
     const fields = [
       ['镜像', c.image],
@@ -629,7 +711,6 @@ function renderDialogContainers() {
     ];
     for (const [label, val] of fields) {
       const p = document.createElement('div');
-      p.style.marginBottom = '0.25rem';
       const lbl = document.createElement('strong');
       lbl.textContent = `${label}: `;
       const span = document.createElement('span');

@@ -7,84 +7,137 @@
   <link rel="stylesheet" href="newtab.css">
 </head>
 <body>
-  <header>
-    <div class="header-left">
-      <h1 id="page-title">BO Console</h1>
-      <span id="helper-status" class="helper-badge"></span>
-    </div>
-    <div class="header-right">
-      <span id="clock"></span>
-      <button id="refresh-button" type="button" aria-label="刷新状态">⟳</button>
-      <a id="settings-link" href="settings.html" aria-label="设置">⚙</a>
-    </div>
-  </header>
-
-  <main>
-    <div class="greeting-search">
-      <p id="greeting" class="greeting"></p>
-      <form id="search-form" role="search" aria-label="网页搜索">
-        <select id="search-engine-select" aria-label="搜索引擎">
-          <option value="google">Google</option>
-          <option value="baidu">百度</option>
-        </select>
-        <input id="search-input" type="text" placeholder="搜索，或输入网址..." aria-label="搜索">
-        <kbd>⌘K</kbd>
-      </form>
-    </div>
-
-    <section id="shortcut-nav" aria-label="快捷入口"></section>
-
-    <section id="summary-section" aria-label="状态摘要">
-      <div class="summary-card" id="card-docker">
-        <h3>DOCKER</h3>
-        <div class="summary-main"><span id="docker-running">-</span> 运行中</div>
-        <div class="summary-sub"><span id="docker-stopped">-</span> 已停止</div>
-      </div>
-      <div class="summary-card" id="card-ports">
-        <h3>端口</h3>
-        <div class="summary-main"><span id="port-total">-</span> 个关注端口</div>
-        <div class="summary-sub"><span id="port-listening">-</span> 监听 / <span id="port-missing">-</span> 未监听</div>
-      </div>
-      <div class="summary-card" id="card-servers">
-        <h3>服务器</h3>
-        <div class="summary-main"><span id="server-online">-</span> 在线 / <span id="server-offline">-</span> 离线</div>
-        <div class="summary-sub">平均 CPU <span id="server-avg-cpu">-</span></div>
-      </div>
-      <div class="summary-card" id="card-attention">
-        <h3>异常</h3>
-        <div class="summary-main"><span id="attention-count">-</span> 项需要关注</div>
-        <div class="summary-sub" id="attention-breakdown"></div>
-      </div>
-    </section>
-
-    <div class="dashboard-grid">
-      <section id="docker-section" aria-labelledby="docker-heading">
-        <h2 id="docker-heading">本机 · Docker 容器 <button id="docker-view-all" type="button">查看全部</button></h2>
-        <div id="container-list" class="item-list"></div>
-      </section>
-
-      <section id="port-section" aria-labelledby="port-heading">
-        <h2 id="port-heading">监听端口 <span id="port-mode-badge"></span></h2>
-        <div id="port-filters" class="filters">
-          <button class="filter-btn active" data-filter="all" type="button">全部</button>
-          <button class="filter-btn" data-filter="docker" type="button">Docker</button>
-          <button class="filter-btn" data-filter="system" type="button">系统</button>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand-lockup">
+        <div class="brand-mark" aria-hidden="true">BO</div>
+        <div>
+          <h1 class="brand-name" id="page-title">BO Console</h1>
+          <div class="brand-meta"><span id="helper-status" class="helper-badge"></span></div>
         </div>
-        <div id="port-list" class="item-list"></div>
-        <div id="port-pagination" class="pagination"></div>
+      </div>
+      <div class="top-actions">
+        <div class="date-line" id="clock"></div>
+        <button class="icon-btn" id="refresh-button" type="button" aria-label="刷新状态">↻</button>
+        <button class="icon-btn" id="settings-link" type="button" aria-label="设置">⚙</button>
+      </div>
+    </header>
+
+    <main class="shell">
+      <div class="hero">
+        <section class="intro" aria-label="问候">
+          <div>
+            <div class="eyebrow">本机运维首页 · 只读模式</div>
+            <h2 class="greeting" id="greeting"></h2>
+          </div>
+          <p class="intro-note">打开新标签页，先看一眼本机与服务器状态，再继续今天的工作。</p>
+        </section>
+        <form class="search-row" id="search-form" role="search" aria-label="网页搜索">
+          <select class="search-engine" id="search-engine-select" aria-label="选择搜索引擎">
+            <option value="google">Google</option>
+            <option value="baidu">百度</option>
+          </select>
+          <label class="search-box">
+            <span class="search-glyph" aria-hidden="true">⌕</span>
+            <input id="search-input" type="text" autocomplete="off" placeholder="搜索，或输入网址…" aria-label="搜索">
+            <span class="keycap">⌘ K</span>
+          </label>
+          <button class="search-submit" type="submit" aria-label="开始搜索">
+            <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+          </button>
+        </form>
+      </div>
+
+      <section aria-label="快捷入口">
+        <div class="section-head">
+          <h2 class="section-title">快捷入口</h2>
+          <button class="section-link" id="add-shortcut-entry" type="button">＋ 添加入口</button>
+        </div>
+        <div class="shortcut-grid" id="shortcut-nav"></div>
       </section>
 
-      <section id="server-section" aria-labelledby="server-heading">
-        <h2 id="server-heading">服务器 · 哪吒监控</h2>
-        <div id="server-list" class="item-list"></div>
+      <section class="summary-grid" id="summary-section" aria-label="状态摘要">
+        <article class="summary-card" id="card-docker">
+          <span class="summary-label">Docker</span>
+          <div class="summary-value"><span id="docker-running">-</span> <small>运行中</small></div>
+          <div class="summary-foot"><span id="docker-stopped">-</span> 已停止</div>
+        </article>
+        <article class="summary-card" id="card-ports">
+          <span class="summary-label">Port Status</span>
+          <div class="summary-value"><span id="port-total">-</span> <small>个关注端口</small></div>
+          <div class="summary-foot"><span class="good"><span id="port-listening">-</span> 监听</span><span class="danger"><span id="port-missing">-</span> 未监听</span></div>
+        </article>
+        <article class="summary-card" id="card-servers">
+          <span class="summary-label">Servers</span>
+          <div class="summary-value"><span id="server-online">-</span> <small>在线节点</small></div>
+          <div class="summary-foot"><span class="danger"><span id="server-offline">-</span> 离线</span><span>CPU <span id="server-avg-cpu">-</span></span></div>
+        </article>
+        <article class="summary-card" id="card-attention">
+          <span class="summary-label">Attention</span>
+          <div class="summary-value"><span id="attention-count">-</span> <small>项需要关注</small></div>
+          <div class="summary-foot" id="attention-breakdown"></div>
+        </article>
       </section>
 
-      <section id="attention-section" aria-labelledby="attention-heading">
-        <h2 id="attention-heading">当前异常</h2>
-        <div id="attention-list" class="item-list"></div>
-      </section>
-    </div>
-  </main>
+      <div class="main-grid">
+        <div class="stack">
+          <section class="panel" id="docker-section" aria-labelledby="docker-heading">
+            <div class="panel-head">
+              <div>
+                <h2 class="panel-title" id="docker-heading">本机 · Docker 容器</h2>
+                <p class="panel-subtitle">OrbStack · 运行状态与资源占用</p>
+              </div>
+              <button class="panel-action" id="docker-view-all" type="button">查看全部</button>
+            </div>
+            <div class="data-list" id="container-list"></div>
+          </section>
+
+          <section class="panel" id="port-section" aria-labelledby="port-heading">
+            <div class="panel-head">
+              <div>
+                <h2 class="panel-title" id="port-heading">关注端口 <span id="port-mode-badge"></span></h2>
+                <p class="panel-subtitle">TCP LISTEN · 未监听端口仍保留在列表中</p>
+              </div>
+            </div>
+            <div class="filter-row" id="port-filters">
+              <button class="filter-btn active" data-filter="all" type="button">全部</button>
+              <button class="filter-btn" data-filter="docker" type="button">Docker</button>
+              <button class="filter-btn" data-filter="system" type="button">系统</button>
+            </div>
+            <div class="data-list" id="port-list"></div>
+            <div class="pagination" id="port-pagination"></div>
+          </section>
+        </div>
+
+        <div class="stack">
+          <section class="panel" id="server-section" aria-labelledby="server-heading">
+            <div class="panel-head">
+              <div>
+                <h2 class="panel-title" id="server-heading">服务器 · 哪吒监控</h2>
+                <p class="panel-subtitle">按异常优先 · 最新快照</p>
+              </div>
+            </div>
+            <div class="server-list" id="server-list"></div>
+          </section>
+
+          <section class="panel" id="attention-section" aria-labelledby="attention-heading">
+            <div class="panel-head">
+              <div>
+                <h2 class="panel-title" id="attention-heading">当前异常</h2>
+                <p class="panel-subtitle">仅根据最新快照计算</p>
+              </div>
+            </div>
+            <div class="attention-list" id="attention-list"></div>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <span id="status-live" aria-live="polite"></span>
+      <span>只读模式 · v0.1</span>
+    </footer>
+  </div>
 
   <dialog id="container-dialog" aria-labelledby="container-dialog-heading">
     <h2 id="container-dialog-heading">Docker 容器</h2>
@@ -92,9 +145,108 @@
     <form method="dialog"><button type="button" id="close-dialog">关闭</button></form>
   </dialog>
 
-  <footer>
-    <span id="status-live" aria-live="polite"></span>
-  </footer>
+  <div class="settings-overlay" id="settings-overlay"></div>
+
+  <aside class="settings-panel" id="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="settings-header">
+      <h2 id="settings-title">设置</h2>
+      <button class="icon-btn close-btn" id="close-settings" type="button" aria-label="关闭设置">×</button>
+    </div>
+
+    <form id="settings-form">
+      <div class="settings-body">
+        <div class="settings-section">
+          <div class="settings-section-head">基本设置</div>
+          <div class="form-group">
+            <label class="form-label" for="title">页面标题 <span class="required">*</span></label>
+            <input class="form-input" id="title" type="text" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="greeting-name">问候名称</label>
+            <input class="form-input" id="greeting-name" type="text" placeholder="用于首页“下午好，××”">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="search-engine">搜索模板 <span class="required">*</span></label>
+            <input class="form-input" id="search-engine" type="text" required placeholder="https://www.google.com/search?q=%s">
+            <p class="settings-hint">%s 会被替换为搜索词。</p>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-head">关注端口</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="watched-port">端口号</label>
+              <input class="form-input" id="watched-port" type="number" min="1" max="65535" placeholder="1–65535">
+            </div>
+            <div class="form-group-auto">
+              <button class="primary-btn-sm" id="add-watched-port" type="button">添加端口</button>
+            </div>
+          </div>
+          <div class="port-tags" id="watched-port-list"></div>
+          <p class="settings-hint">留空显示所有 TCP 监听端口；添加后只显示关注端口。</p>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-head">哪吒监控</div>
+          <div class="form-group">
+            <label class="form-label" for="nezha-base-url">Dashboard 地址</label>
+            <input class="form-input" id="nezha-base-url" type="url" placeholder="https://nezha.example.com">
+          </div>
+          <p class="settings-hint">PAT 凭据不经过设置页，由本地 Helper 的 .env 持有。</p>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-head">阈值设置</div>
+          <p class="settings-hint hint-top">作用于服务器的 CPU / 内存 / 磁盘监控指标。</p>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="warning-threshold">警告阈值 %</label>
+              <input class="form-input" id="warning-threshold" type="number" min="1" max="99">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="critical-threshold">严重阈值 %</label>
+              <input class="form-input" id="critical-threshold" type="number" min="2" max="100">
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-head">刷新间隔</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="local-refresh">本机刷新（秒）</label>
+              <input class="form-input" id="local-refresh" type="number" min="5" max="300">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="remote-refresh">服务器刷新（秒）</label>
+              <input class="form-input" id="remote-refresh" type="number" min="10" max="600">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="ports-per-page">每页端口数</label>
+            <input class="form-input narrow" id="ports-per-page" type="number" min="5" max="100">
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-head">快捷入口</div>
+          <div class="shortcut-editor-list" id="shortcut-list" aria-label="快捷入口"></div>
+          <button class="add-btn" id="add-shortcut" type="button">＋ 添加快捷入口</button>
+        </div>
+      </div>
+
+      <div class="settings-footer">
+        <div class="settings-status" id="status-message" role="status"></div>
+        <div class="settings-footer-actions">
+          <button class="secondary-btn" id="test-helper" type="button">测试 Helper 连接</button>
+          <div class="spacer"></div>
+          <button class="secondary-btn" id="cancel-settings" type="button">取消</button>
+          <button class="primary-btn-sm" id="save-settings" type="submit">保存</button>
+        </div>
+      </div>
+    </form>
+  </aside>
 
   <script type="module" src="newtab.js"></script>
 </body>

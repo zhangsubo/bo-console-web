@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "check": "node --test && node --check helper/server.js && node --check extension/newtab.js && node --check extension/settings.js"
+    "check": "node --test && node --check helper/server.js && node --check extension/newtab.js && node --check extension/lib/settings-panel.js"
   },
   "engines": {
     "node": ">=22"
