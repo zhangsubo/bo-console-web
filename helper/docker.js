@@ -59,6 +59,7 @@ export function parseDockerStats(output) {
 }
 
 export async function collectDocker(runCommand) {
+  const dockerBin = process.env.DOCKER_BIN || 'docker';
   if (!runCommand) {
     runCommand = async (cmd, args) => {
       const { stdout } = await execFile(cmd, args, {
@@ -71,8 +72,8 @@ export async function collectDocker(runCommand) {
   let psOutput, statsOutput;
   try {
     [psOutput, statsOutput] = await Promise.all([
-      runCommand('docker', ['ps', '-a', '--no-trunc', '--format', '{{json .}}']),
-      runCommand('docker', ['stats', '--no-stream', '--format', '{{json .}}']),
+      runCommand(dockerBin, ['ps', '-a', '--no-trunc', '--format', '{{json .}}']),
+      runCommand(dockerBin, ['stats', '--no-stream', '--format', '{{json .}}']),
     ]);
   } catch (err) {
     throw new CollectorError('docker_unavailable', err.message);
